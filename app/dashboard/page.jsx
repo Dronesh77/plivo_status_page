@@ -1,25 +1,37 @@
 "use client"
 
-import { useSession } from 'next-auth/react'
+import { useSession, signIn } from 'next-auth/react'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 
 const DashboardPage = () => {
-  const { data: session } = useSession()
+  const { data: session, status } = useSession()
+  const router = useRouter()
   const [services, setServices] = useState([])
 
   useEffect(() => {
-    const fetchServices = async () => {
-      try {
-        const res = await fetch('/api/service')
-        const data = await res.json()
-        setServices(data)
-      } catch (err) {
-        console.error('Failed to fetch services:', err)
-      }
+    if (status === "unauthenticated") {
+      signIn() // Redirect to sign-in if not logged in
     }
-    fetchServices()
-  }, [])
+  }, [status])
+
+  useEffect(() => {
+    if (status === "authenticated") {
+      const fetchServices = async () => {
+        try {
+          const res = await fetch('/api/service')
+          const data = await res.json()
+          setServices(data)
+        } catch (err) {
+          console.error('Failed to fetch services:', err)
+        }
+      }
+      fetchServices()
+    }
+  }, [status])
+
+  if (status === "loading") return <p className="p-10">Loading...</p>
 
   return (
     <div className="p-10 bg-gray-100 min-h-screen">
